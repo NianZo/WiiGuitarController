@@ -4,8 +4,6 @@
 #include <Arduino.h>
 #include "PluggableUSB.h"
 
-#if defined(USBCON)
-
 #define _USING_HID
 
 // HID 'Driver'
@@ -101,7 +99,6 @@ HID_& HID();
 
 #define D_HIDREPORT(length) { 9, 0x21, 0x01, 0x01, 0, 1, 0x22, lowByte(length), highByte(length) }
 
-#endif // USBCON
 
 HID_& HID()
 {
@@ -318,7 +315,7 @@ typedef struct
 {
   uint16_t buttons; // 2
   uint8_t hatAndConstant; // 1
-  uint32_t instrumentIdentifier; // 4
+  uint8_t axis[4]; // 4
   uint8_t reserved1[12]; // 12
   uint64_t finalConstant; // 8
 } InstrumentButtonState;
@@ -346,17 +343,107 @@ void Instrument::SendReport2(InstrumentButtonState* buttons)
 }
 
 int TESTBUTTON = 2;
+int BIT0 = 2;
+int BIT1 = 3;
+int BIT2 = 4;
+int BIT3 = 5;
+int BIT4 = 6;
+int BIT5 = 7;
+int BIT6 = 8;
+int BIT7 = 9;
+int BIT8 = 10;
+int BIT9 = 11;
+//int wammyPin = 12;
+int STRUM_DOWN = 0;
+int STRUM_UP = 1;
+int TILT_SWITCH = 2;
+int BUTTON_GREEN = 3;
+int BUTTON_RED = 4;
+int BUTTON_YELLOW = 5;
+int BUTTON_BLUE = 6;
+int BUTTON_ORANGE = 7;
+int SOLO_BUTTON_GREEN = 8;
+int SOLO_BUTTON_RED = 9;
+int SOLO_BUTTON_YELLOW = 10;
+int SOLO_BUTTON_BLUE = 11;
+int SOLO_BUTTON_ORANGE = 12;
+int BUTTON_PLUS = 13;
+int BUTTON_MINUS = 18;
+int ANALOG_WAMMY = 19;
+int BUTTON_UP = 20;
+int BUTTON_RIGHT = 21;
+int BUTTON_DOWN = 22;
+int BUTTON_LEFT = 23;
+
+uint16_t GREEN_BIT = 0x0002;
+uint16_t RED_BIT = 0x0004;
+uint16_t YELLOW_BIT = 0x0008;
+uint16_t BLUE_BIT = 0x0001;
+uint16_t ORANGE_BIT = 0x0010;
+uint16_t SOLO_BIT = 0x0040;
+uint16_t OVERDRIVE_BIT = 0x0020;
+uint16_t PLUS_BIT = 0x0200;
+uint16_t MINUS_BIT = 0x0100;
+
 int OBLED = 13;
 Instrument instrument;
 InstrumentButtonState buttonState;
 
+void setButtonBits(uint16_t bits, bool state)
+{
+  if (state)
+  {
+    buttonState.buttons |= bits;
+  }  
+  else
+  {
+    buttonState.buttons &= ~bits;
+  }
+}
+
+void setOtherBits(uint8_t bits, bool state)
+{
+  if (state)
+  {
+    buttonState.hatAndConstant |= bits;
+  }  
+  else
+  {
+    buttonState.hatAndConstant &= ~bits;
+  }
+}
+
 void setup() {
   // put your setup code here, to run once:
-  pinMode(TESTBUTTON, INPUT_PULLUP);
-  pinMode(OBLED, OUTPUT);
+  //pinMode(TESTBUTTON, INPUT_PULLUP);
+  pinMode(STRUM_DOWN, INPUT_PULLUP);
+  pinMode(STRUM_UP, INPUT_PULLUP);
+  pinMode(TILT_SWITCH, INPUT_PULLUP);
+  pinMode(BUTTON_GREEN, INPUT_PULLUP);
+  pinMode(BUTTON_RED, INPUT_PULLUP);
+  pinMode(BUTTON_YELLOW, INPUT_PULLUP);
+  pinMode(BUTTON_BLUE, INPUT_PULLUP);
+  pinMode(BUTTON_ORANGE, INPUT_PULLUP);
+  pinMode(SOLO_BUTTON_GREEN, INPUT_PULLUP);
+  pinMode(SOLO_BUTTON_RED, INPUT_PULLUP);
+  pinMode(SOLO_BUTTON_YELLOW, INPUT_PULLUP);
+  pinMode(SOLO_BUTTON_BLUE, INPUT_PULLUP);
+  pinMode(SOLO_BUTTON_ORANGE, INPUT_PULLUP);
+  pinMode(BUTTON_PLUS, INPUT_PULLUP);
+  pinMode(BUTTON_MINUS, INPUT_PULLUP);
+  pinMode(ANALOG_WAMMY, INPUT);
+  pinMode(BUTTON_UP, INPUT_PULLUP);
+  pinMode(BUTTON_RIGHT, INPUT_PULLUP);
+  pinMode(BUTTON_DOWN, INPUT_PULLUP);
+  pinMode(BUTTON_LEFT, INPUT_PULLUP);
+  //pinMode(OBLED, OUTPUT);
   buttonState.buttons = 0x0000;
   buttonState.hatAndConstant = 0x08;
-  buttonState.instrumentIdentifier = 0x80808080;//0x7f807f80;// guitar identifier //0x80808080; // Drum identifier
+  //buttonState.instrumentIdentifier = 0x80808080;//0x7f807f80;// guitar identifier //0x80808080; // Drum identifier
+  buttonState.axis[0] = 0;
+  buttonState.axis[1] = 0;
+  buttonState.axis[2] = 0;
+  buttonState.axis[3] = 0;
   for (int i = 0; i < 12; i++)
   {
     buttonState.reserved1[i] = 0x0;
@@ -367,14 +454,62 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   buttonState.buttons = 0;
-  if (!digitalRead(TESTBUTTON))
+  buttonState.hatAndConstant = 0;
+  //setButtonBits(0x0082, !digitalRead(TESTBUTTON));
+  // setButtonBits(0x0080, !digitalRead(BIT0));
+  // setButtonBits(0x0040, !digitalRead(BIT1));
+  // setButtonBits(0x0020, !digitalRead(BIT2));
+  // setButtonBits(0x0010, !digitalRead(BIT3));
+  // setButtonBits(0x0008, !digitalRead(BIT4));
+  // setButtonBits(0x0004, !digitalRead(BIT5));
+  // setButtonBits(0x0002, !digitalRead(BIT6));
+  // setButtonBits(0x0001, !digitalRead(BIT7));
+  // setButtonBits(0x8000, !digitalRead(BIT8));
+  // setButtonBits(0x4000, !digitalRead(BIT9));
+  setButtonBits(GREEN_BIT, !digitalRead(BUTTON_GREEN) || !digitalRead(SOLO_BUTTON_GREEN));  
+  setButtonBits(RED_BIT, !digitalRead(BUTTON_RED) || !digitalRead(SOLO_BUTTON_RED));
+  setButtonBits(YELLOW_BIT, !digitalRead(BUTTON_YELLOW) || !digitalRead(SOLO_BUTTON_YELLOW));
+  setButtonBits(BLUE_BIT, !digitalRead(BUTTON_BLUE) || !digitalRead(SOLO_BUTTON_BLUE));
+  setButtonBits(ORANGE_BIT, !digitalRead(BUTTON_ORANGE) || !digitalRead(SOLO_BUTTON_ORANGE));
+  setButtonBits(SOLO_BIT, !digitalRead(SOLO_BUTTON_GREEN) || !digitalRead(SOLO_BUTTON_RED) || !digitalRead(SOLO_BUTTON_YELLOW) || !digitalRead(SOLO_BUTTON_BLUE) || !digitalRead(SOLO_BUTTON_ORANGE));
+  setButtonBits(OVERDRIVE_BIT, !digitalRead(TILT_SWITCH));
+  setButtonBits(PLUS_BIT, !digitalRead(BUTTON_PLUS));
+  setButtonBits(MINUS_BIT, !digitalRead(BUTTON_MINUS));
+  if (!digitalRead(BUTTON_UP) || !digitalRead(STRUM_UP))
   {
-    buttonState.buttons |= 0x0082;
-  }
-  else
+    buttonState.hatAndConstant = 0x00;
+  } else if (!digitalRead(BUTTON_RIGHT))
   {
-    buttonState.buttons &= ~0x0082;
+    buttonState.hatAndConstant = 0x02;
+  } else if (!digitalRead(BUTTON_DOWN) || !digitalRead(STRUM_DOWN))
+  {
+    buttonState.hatAndConstant = 0x04;
+  } else if (!digitalRead(BUTTON_LEFT))
+  {
+    buttonState.hatAndConstant = 0x06;
+  } else
+  {
+    buttonState.hatAndConstant = 0x08;
   }
+
+  //uint16_t wammy = (analogRead(A11) / 100) - 1;
+  //buttonState.hatAndConstant |= wammy << 4; 
+  uint8_t wammy = analogRead(ANALOG_WAMMY) / 4;
+  buttonState.axis[2] = wammy;
+  //setOtherBits(0x08, !digitalRead(A0));
+  //setOtherBits(0x04, !digitalRead(A1));
+  //setOtherBits(0x02, !digitalRead(A2));
+  //setOtherBits(0x01, !digitalRead(A3));
+  //setButtonBits(0x0200, !digitalRead(A4));
+  //setButtonBits(0x0100, !digitalRead(A5));
+  // if (!digitalRead(TESTBUTTON))
+  // {
+  //   buttonState.buttons |= 0x0082;
+  // }
+  // else
+  // {
+  //   buttonState.buttons &= ~0x0082;
+  // }
   //digitalWrite(OBLED, LOW);
   //delay(200);
   //digitalWrite(OBLED, HIGH);
